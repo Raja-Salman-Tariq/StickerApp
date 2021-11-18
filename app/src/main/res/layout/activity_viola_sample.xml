@@ -5,45 +5,45 @@
     android:orientation="vertical"
     android:padding="5dp">
 
-    <RadioGroup
-        android:id="@+id/radio_algorithm"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:orientation="horizontal">
+<!--    <RadioGroup-->
+<!--        android:id="@+id/radio_algorithm"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_alignParentTop="true"-->
+<!--        android:orientation="horizontal">-->
 
-        <RadioButton
-            android:id="@+id/rb_3by4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="@string/rb_three_by_four" />
+<!--        <RadioButton-->
+<!--            android:id="@+id/rb_3by4"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:checked="true"-->
+<!--            android:text="@string/rb_three_by_four" />-->
 
-        <RadioButton
-            android:id="@+id/rb_square"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="@string/rb_square" />
+<!--        <RadioButton-->
+<!--            android:id="@+id/rb_square"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginStart="8dp"-->
+<!--            android:text="@string/rb_square" />-->
 
-        <RadioButton
-            android:id="@+id/rb_least"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="@string/rb_least" />
-    </RadioGroup>
+<!--        <RadioButton-->
+<!--            android:id="@+id/rb_least"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginStart="8dp"-->
+<!--            android:text="@string/rb_least" />-->
+<!--    </RadioGroup>-->
 
     <LinearLayout
-        android:id="@+id/ll_original_image"
+        android:id="@+id/ll_original_image_ue"
         android:layout_width="match_parent"
-        android:layout_height="175dp"
+        android:layout_height="match_parent"
         android:background="#F86B62"
         android:orientation="horizontal"
         android:padding="8dp">
 
         <ImageView
-            android:id="@+id/iv_input_image"
+            android:id="@+id/iv_input_image_ue"
             android:layout_width="250dp"
             android:layout_height="175dp"
             android:background="#000000" />
@@ -54,7 +54,7 @@
             android:layout_marginStart="6dp">
 
             <Button
-                android:id="@+id/btImage"
+                android:id="@+id/btImage_ue"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top"
@@ -66,7 +66,7 @@
                 android:textStyle="bold" />
 
             <Button
-                android:id="@+id/btCrop"
+                android:id="@+id/btCrop_ue"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom"
@@ -82,7 +82,7 @@
     </LinearLayout>
 
     <TextView
-        android:id="@+id/tvErrorMessage"
+        android:id="@+id/tvErrorMessage_ue"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
@@ -90,13 +90,13 @@
         android:textSize="16sp"
         android:visibility="gone" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvCroppedImages"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="6dp"
-        android:background="#FF9800"
-        android:overScrollMode="never" />
+<!--    <androidx.recyclerview.widget.RecyclerView-->
+<!--        android:id="@+id/rvCroppedImages"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent"-->
+<!--        android:layout_marginTop="6dp"-->
+<!--        android:background="#FF9800"-->
+<!--        android:overScrollMode="never" />-->
 
 
 </LinearLayout>

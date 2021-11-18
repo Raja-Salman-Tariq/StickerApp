@@ -27,6 +27,7 @@ import kotlinx.android.synthetic.main.activity_face_crop_sample.radio_algorithm
 import kotlinx.android.synthetic.main.activity_face_crop_sample.rvCroppedImages
 import kotlinx.android.synthetic.main.activity_face_crop_sample.tvErrorMessage
 import kotlinx.android.synthetic.main.activity_viola_sample.*
+import kotlinx.android.synthetic.main.activity_viola_sample_edited.*
 
 
 /**
@@ -39,19 +40,19 @@ import kotlinx.android.synthetic.main.activity_viola_sample.*
 class ViolaSampleActivity : AppCompatActivity() {
 
     private lateinit var viola: Viola
-    private lateinit var staggeredLayoutManager: StaggeredGridLayoutManager
-    private val faceListAdapter = FacePhotoAdapter()
+//    private lateinit var staggeredLayoutManager: StaggeredGridLayoutManager
+//    private val faceListAdapter = FacePhotoAdapter()
     private var bitmap: Bitmap? = null
-    private var cropAlgorithm = CropAlgorithm.THREE_BY_FOUR
+//    private var cropAlgorithm = CropAlgorithm.THREE_BY_FOUR
     private lateinit var permissionHelper: PermissionHelper
 
     private val imagePickerIntentId = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_viola_sample)
+        setContentView(R.layout.activity_viola_sample_edited)
         permissionHelper = PermissionHelper(this)
-        initializeUI()
+//        initializeUI()
         setEventListeners()
         prepareFaceCropper()
     }
@@ -66,22 +67,22 @@ class ViolaSampleActivity : AppCompatActivity() {
         permissionHelper.onDestroy()
     }
 
-    private fun initializeUI() {
-        staggeredLayoutManager = StaggeredGridLayoutManager(2, LinearLayoutManager.VERTICAL)
-        staggeredLayoutManager.gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_NONE
-        rvCroppedImages.layoutManager = staggeredLayoutManager
-        rvCroppedImages.adapter = faceListAdapter
-    }
+//    private fun initializeUI() {
+//        staggeredLayoutManager = StaggeredGridLayoutManager(2, LinearLayoutManager.VERTICAL)
+//        staggeredLayoutManager.gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_NONE
+//        rvCroppedImages.layoutManager = staggeredLayoutManager
+//        rvCroppedImages.adapter = faceListAdapter
+//    }
 
     private fun setEventListeners() {
         btImage.setOnClickListener {
             requestStoragePermission()
         }
         btCrop.setOnClickListener {
-            val radioButtonID: Int = radio_algorithm.checkedRadioButtonId
-            val radioButton: View = radio_algorithm.findViewById(radioButtonID)
-            val algorithmIndex: Int = radio_algorithm.indexOfChild(radioButton)
-            cropAlgorithm = getAlgorithmByIndex(algorithmIndex)
+//            val radioButtonID: Int = radio_algorithm.checkedRadioButtonId
+//            val radioButton: View = radio_algorithm.findViewById(radioButtonID)
+//            val algorithmIndex: Int = radio_algorithm.indexOfChild(radioButton)
+//            cropAlgorithm = CropAlgorithm.SQUARE//getAlgorithmByIndex(algorithmIndex)
             crop()
         }
     }
@@ -107,16 +108,16 @@ class ViolaSampleActivity : AppCompatActivity() {
         startActivityForResult(chooserIntent, imagePickerIntentId)
     }
 
-    private fun getAlgorithmByIndex(index: Int): CropAlgorithm = when (index) {
-        0 -> CropAlgorithm.THREE_BY_FOUR
-        1 -> CropAlgorithm.SQUARE
-        2 -> CropAlgorithm.LEAST
-        else -> CropAlgorithm.THREE_BY_FOUR
-    }
+//    private fun getAlgorithmByIndex(index: Int): CropAlgorithm = when (index) {
+//        0 -> CropAlgorithm.THREE_BY_FOUR
+//        1 -> CropAlgorithm.SQUARE
+//        2 -> CropAlgorithm.LEAST
+//        else -> CropAlgorithm.THREE_BY_FOUR
+//    }
 
     private fun prepareFaceCropper() {
         viola = Viola(listener)
-        viola.addAgeClassificationPlugin(this)
+//        viola.addAgeClassificationPlugin(this)
 
         val options = BitmapFactory.Options()
         options.inScaled = false
@@ -130,29 +131,34 @@ class ViolaSampleActivity : AppCompatActivity() {
     private fun crop() {
         val faceOption =
             FaceOptions.Builder()
-                .cropAlgorithm(cropAlgorithm)
+                .cropAlgorithm(/*cropAlgorithm*/CropAlgorithm.SQUARE)
                 .setMinimumFaceSize(6)
-                .enableAgeClassification()
+//                .enableAgeClassification()
                 .enableDebug()
                 .build()
         viola.detectFace(bitmap!!, faceOption)
     }
 
+    // call back for face detect op
     private val listener: FaceDetectionListener = object : FaceDetectionListener {
 
+        // when successful, show faces
         override fun onFaceDetected(result: Result) {
-            faceListAdapter.bindData(result.facePortraits)
+//            faceListAdapter.bindData(result.facePortraits)
+            iv_input_image.setImageBitmap(result.facePortraits[0].face)
             tvErrorMessage.visibility = View.GONE
         }
 
+        // when unsucessful op, show njothing except error; eg image size unsupported, etc.
         override fun onFaceDetectionFailed(error: FaceDetectionError, message: String) {
             tvErrorMessage.text = message
             tvErrorMessage.visibility = View.VISIBLE
-            faceListAdapter.bindData(emptyList())
+//            faceListAdapter.bindData(emptyList())
         }
     }
 
 
+    // get image to work on and clear any previous views
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == imagePickerIntentId && resultCode == Activity.RESULT_OK) {
@@ -163,10 +169,11 @@ class ViolaSampleActivity : AppCompatActivity() {
             bitmap = BitmapFactory.decodeFile(imagePath, options)
             bitmap = Util.modifyOrientation(bitmap!!, imagePath!!)
             iv_input_image.setImageBitmap(bitmap)
-            faceListAdapter.bindData(emptyList())
+//            faceListAdapter.bindData(emptyList())
         }
     }
 
+    // callback for getting permissions
     private val permissionsListener: PermissionsListener = object : PermissionsListener {
         override fun onPermissionGranted(request_code: Int) {
             tvErrorMessage.visibility = View.GONE
