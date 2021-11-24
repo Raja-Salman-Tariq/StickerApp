@@ -1,4 +1,4 @@
-package com.darwin.sample;
+package com.darwin.sample.utils;
 
 import android.Manifest;
 import android.app.Activity;

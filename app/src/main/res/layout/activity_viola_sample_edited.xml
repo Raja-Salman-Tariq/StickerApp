@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -12,14 +13,30 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:id="@+id/iv_input_image"
         android:layout_width="match_parent"
-        android:layout_height="250dp"
-        android:background="#000000" />
+        android:layout_height="200dp"
+        android:background="@android:color/transparent" />
 
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
         app:layout_constraintTop_toBottomOf="@id/iv_input_image"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        android:layout_margin="25dp"
+        android:layout_margin="15dp"
+        android:id="@+id/btCam"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="#000000"
+        android:stateListAnimator="@null"
+        android:text="@string/bt_cam"
+        android:textColor="#E2E6E6"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+    
+    <androidx.appcompat.widget.AppCompatButton
+        app:layout_constraintTop_toBottomOf="@id/btCam"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_margin="15dp"
         android:id="@+id/btImage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -28,23 +45,55 @@
         android:stateListAnimator="@null"
         android:text="@string/bt_image"
         android:textColor="#E2E6E6"
-        android:textSize="16sp"
+        android:textSize="14sp"
         android:textStyle="bold" />
 
-    <Button
+    <androidx.appcompat.widget.AppCompatButton
         app:layout_constraintTop_toBottomOf="@id/btImage"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_margin="25dp"
+        android:layout_margin="15dp"
         android:id="@+id/btCrop"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="#000000"
+        android:stateListAnimator="@null"
+        android:text="@string/bt_crop"
+        android:textColor="#E2E6E6"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        app:layout_constraintTop_toBottomOf="@id/btCrop"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="15dp"
+        android:id="@+id/btCutout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="#4C4E4E"
         android:stateListAnimator="@null"
-        android:text="@string/bt_crop"
+        android:text="@string/bt_cutout"
         android:textColor="#E2E6E6"
-        android:textSize="16sp"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        app:layout_constraintTop_toBottomOf="@id/btCutout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="15dp"
+        android:id="@+id/btSave"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="#000"
+        android:stateListAnimator="@null"
+        android:text="@string/bt_save"
+        android:textColor="#E2E6E6"
+        android:textSize="14sp"
         android:textStyle="bold" />
 
     <TextView
@@ -52,7 +101,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:padding="25dp"
-        app:layout_constraintTop_toBottomOf="@id/btCrop"
+        app:layout_constraintTop_toBottomOf="@id/btSave"
         android:id="@+id/tvErrorMessage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

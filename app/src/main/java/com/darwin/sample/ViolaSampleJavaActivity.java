@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
+import com.darwin.sample.utils.PermissionHelper;
 import com.darwin.viola.still.FaceDetectionListener;
 import com.darwin.viola.still.Viola;
 import com.darwin.viola.still.model.CropAlgorithm;

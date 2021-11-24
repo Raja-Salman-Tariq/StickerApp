@@ -4,26 +4,78 @@
     package="com.darwin.sample">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-feature android:name="android.hardware.camera"
+        android:required="true" />
 
     <application
+        android:name=".stickerscode.StickerApplication"
         android:allowBackup="false"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/ic_launcher_round_one"
         android:label="@string/app_name"
         android:requestLegacyExternalStorage="true"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@mipmap/ic_launcher_round_one"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        tools:targetApi="q">
+        tools:targetApi="q"
+        tools:replace="android:allowBackup">
         <activity
             android:name="com.darwin.sample.ViolaSampleActivity"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity">
+<!--            <intent-filter>-->
+<!--                <action android:name="android.intent.action.MAIN" />-->
+
+<!--                <category android:name="android.intent.category.LAUNCHER" />-->
+<!--            </intent-filter>-->
+        </activity>
+
+        <provider
+            android:name=".MyFileProvider"
+            android:authorities="com.darwin.sample.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+
+        <activity android:name=".stickerscode.activities.EntryActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-    </application>
+        <activity android:name=".stickerscode.activities.StickerPackListActivity" />
+        <activity
+            android:name=".stickerscode.activities.StickerPackDetailsActivity"
+            android:parentActivityName=".stickerscode.activities.StickerPackListActivity"
+            tools:ignore="UnusedAttribute">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".stickerscode.activities.StickerPackListActivity" />
+        </activity>
+        <activity
+            android:name=".stickerscode.activities.StickerPackInfoActivity"
+            android:label="@string/title_activity_sticker_pack_info"
+            android:parentActivityName=".stickerscode.activities.StickerPackDetailsActivity"
+            tools:ignore="UnusedAttribute">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.darwin.sample.stickerscode.activities.StickerPackDetailsActivity" />
+        </activity>
 
+        <provider
+            android:name=".stickerscode.model.StickerContentProvider"
+            android:authorities="${contentProviderAuthority}"
+            android:enabled="true"
+            android:exported="true"
+            android:readPermission="com.whatsapp.sticker.READ" />
+
+    </application>
+    <queries>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
+    </queries>
 </manifest>

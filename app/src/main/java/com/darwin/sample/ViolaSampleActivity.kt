@@ -1,8 +1,9 @@
 package com.darwin.sample
 
 import android.Manifest
-import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -12,21 +13,24 @@ import android.provider.MediaStore
 import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.darwin.sample.PermissionHelper.PermissionsListener
+import androidx.core.content.FileProvider
+import com.darwin.sample.utils.PermissionHelper.PermissionsListener
+import com.darwin.sample.utils.ActivityResultHandler
+import com.darwin.sample.utils.ImageHandlingHelper
+import com.darwin.sample.utils.PermissionHelper
+import com.darwin.sample.utils.StickerAndPackHandler
 import com.darwin.viola.still.FaceDetectionListener
 import com.darwin.viola.still.Viola
 import com.darwin.viola.still.model.CropAlgorithm
 import com.darwin.viola.still.model.FaceDetectionError
 import com.darwin.viola.still.model.FaceOptions
 import com.darwin.viola.still.model.Result
+import com.github.gabrielbb.cutout.CutOut
+import com.google.android.material.snackbar.BaseTransientBottomBar.LENGTH_INDEFINITE
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_face_crop_sample.btCrop
 import kotlinx.android.synthetic.main.activity_face_crop_sample.iv_input_image
-import kotlinx.android.synthetic.main.activity_face_crop_sample.radio_algorithm
-import kotlinx.android.synthetic.main.activity_face_crop_sample.rvCroppedImages
 import kotlinx.android.synthetic.main.activity_face_crop_sample.tvErrorMessage
-import kotlinx.android.synthetic.main.activity_viola_sample.*
 import kotlinx.android.synthetic.main.activity_viola_sample_edited.*
 
 
@@ -39,61 +43,104 @@ import kotlinx.android.synthetic.main.activity_viola_sample_edited.*
  */
 class ViolaSampleActivity : AppCompatActivity() {
 
+    internal lateinit var pickedImage: Uri
     private lateinit var viola: Viola
-//    private lateinit var staggeredLayoutManager: StaggeredGridLayoutManager
-//    private val faceListAdapter = FacePhotoAdapter()
-    private var bitmap: Bitmap? = null
-//    private var cropAlgorithm = CropAlgorithm.THREE_BY_FOUR
+    internal lateinit var bitmap: Bitmap
     private lateinit var permissionHelper: PermissionHelper
 
-    private val imagePickerIntentId = 1
+    internal val imagePickerIntentId = 1
 
+//    =============================================================================================
+//    -----------------------             ACTIVITY OVERRIDES              -------------------------
+//    =============================================================================================
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_viola_sample_edited)
+
         permissionHelper = PermissionHelper(this)
-//        initializeUI()
+
+        requestStoragePermission()
         setEventListeners()
         prepareFaceCropper()
     }
-
+    //----------------------------------------------------------------------------------------------
     override fun onResume() {
         super.onResume()
         permissionHelper.resume()
     }
-
+    //----------------------------------------------------------------------------------------------
     override fun onDestroy() {
         super.onDestroy()
         permissionHelper.onDestroy()
     }
+    //----------------------------------------------------------------------------------------------
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        permissionHelper.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+    //----------------------------------------------------------------------------------------------
 
-//    private fun initializeUI() {
-//        staggeredLayoutManager = StaggeredGridLayoutManager(2, LinearLayoutManager.VERTICAL)
-//        staggeredLayoutManager.gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_NONE
-//        rvCroppedImages.layoutManager = staggeredLayoutManager
-//        rvCroppedImages.adapter = faceListAdapter
-//    }
-
-    private fun setEventListeners() {
-        btImage.setOnClickListener {
-            requestStoragePermission()
-        }
-        btCrop.setOnClickListener {
-//            val radioButtonID: Int = radio_algorithm.checkedRadioButtonId
-//            val radioButton: View = radio_algorithm.findViewById(radioButtonID)
-//            val algorithmIndex: Int = radio_algorithm.indexOfChild(radioButton)
-//            cropAlgorithm = CropAlgorithm.SQUARE//getAlgorithmByIndex(algorithmIndex)
-            crop()
-        }
+    // get image to work on and clear any previous views
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        ActivityResultHandler.handleResult(
+            this,
+            requestCode,
+            resultCode,
+            data,
+            iv_input_image
+        )
     }
 
+//    =============================================================================================
+//    -----------------------             FUNCTIONALITIES              -------------------------
+//    =============================================================================================
+    private fun setEventListeners() {
+        btImage.setOnClickListener {
+            pickImageFromGallery()
+        }
+        btCam.setOnClickListener {
+            dispatchTakePictureIntent()
+        }
+        btCrop.setOnClickListener {
+            crop()
+        }
+        btCutout.setOnClickListener {
+            CutOut.activity().src(pickedImage).start(this);
+        }
+        btSave.setOnClickListener{
+            val image = StickerAndPackHandler().saveBitmap(this, bitmap)
+
+            val imageUri: Uri = FileProvider.getUriForFile(
+                this,
+                "com.darwin.sample.fileprovider",  //(use your app signature + ".provider" )
+                image
+            )
+
+            val shareIntent: Intent = Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(Intent.EXTRA_STREAM,imageUri )
+                type = "image/webp"
+            }
+            startActivity(Intent.createChooser(shareIntent, resources.getText(R.string.send_to)))
+            val intent = Intent().apply { data = imageUri }
+            setResult(RESULT_OK, intent)
+            finish()
+        }
+    }
+    //----------------------------------------------------------------------------------------------
     private fun requestStoragePermission() {
         permissionHelper.setListener(permissionsListener)
         val requiredPermissions =
-            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE)
         permissionHelper.requestPermission(requiredPermissions, 100)
     }
-
+    //----------------------------------------------------------------------------------------------
     private fun pickImageFromGallery() {
         val getIntent = Intent(Intent.ACTION_GET_CONTENT)
         getIntent.type = "image/*"
@@ -107,17 +154,9 @@ class ViolaSampleActivity : AppCompatActivity() {
         chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(pickIntent))
         startActivityForResult(chooserIntent, imagePickerIntentId)
     }
-
-//    private fun getAlgorithmByIndex(index: Int): CropAlgorithm = when (index) {
-//        0 -> CropAlgorithm.THREE_BY_FOUR
-//        1 -> CropAlgorithm.SQUARE
-//        2 -> CropAlgorithm.LEAST
-//        else -> CropAlgorithm.THREE_BY_FOUR
-//    }
-
+    //----------------------------------------------------------------------------------------------
     private fun prepareFaceCropper() {
         viola = Viola(listener)
-//        viola.addAgeClassificationPlugin(this)
 
         val options = BitmapFactory.Options()
         options.inScaled = false
@@ -125,9 +164,10 @@ class ViolaSampleActivity : AppCompatActivity() {
             resources,
             R.drawable.po_single, options
         )
-        iv_input_image.setImageBitmap(bitmap)
+        pickedImage = ImageHandlingHelper.getDefaultAssetImageUri(resources)
+        iv_input_image.setImageURI(pickedImage)
     }
-
+    //----------------------------------------------------------------------------------------------
     private fun crop() {
         val faceOption =
             FaceOptions.Builder()
@@ -136,48 +176,41 @@ class ViolaSampleActivity : AppCompatActivity() {
 //                .enableAgeClassification()
                 .enableDebug()
                 .build()
-        viola.detectFace(bitmap!!, faceOption)
+        viola.detectFace(ImageHandlingHelper.getBitmapFromUri(this, pickedImage), faceOption)
     }
+
+//    =============================================================================================
+//    -----------------------                 CALL BACKS                  -------------------------
+//    =============================================================================================
 
     // call back for face detect op
     private val listener: FaceDetectionListener = object : FaceDetectionListener {
 
         // when successful, show faces
         override fun onFaceDetected(result: Result) {
-//            faceListAdapter.bindData(result.facePortraits)
-            iv_input_image.setImageBitmap(result.facePortraits[0].face)
+
+            bitmap = result.facePortraits[0].face
+            pickedImage = ImageHandlingHelper.cachePersistingBitmapAndGetUri(this@ViolaSampleActivity, bitmap)
+            iv_input_image.setImageBitmap(bitmap)
+            iv_input_image.setImageURI(pickedImage)
             tvErrorMessage.visibility = View.GONE
         }
 
         // when unsucessful op, show njothing except error; eg image size unsupported, etc.
         override fun onFaceDetectionFailed(error: FaceDetectionError, message: String) {
             tvErrorMessage.text = message
-            tvErrorMessage.visibility = View.VISIBLE
-//            faceListAdapter.bindData(emptyList())
+//            tvErrorMessage.visibility = View.VISIBLE
+            ActivityResultHandler.showGenericSnackbar(message, root_view);
         }
     }
 
-
-    // get image to work on and clear any previous views
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == imagePickerIntentId && resultCode == Activity.RESULT_OK) {
-            val pickedImage: Uri = data?.data!!
-            val imagePath = Util.getPath(this, pickedImage)
-            val options = BitmapFactory.Options()
-            options.inPreferredConfig = Bitmap.Config.ARGB_8888
-            bitmap = BitmapFactory.decodeFile(imagePath, options)
-            bitmap = Util.modifyOrientation(bitmap!!, imagePath!!)
-            iv_input_image.setImageBitmap(bitmap)
-//            faceListAdapter.bindData(emptyList())
-        }
-    }
+    //----------------------------------------------------------------------------------------------
 
     // callback for getting permissions
     private val permissionsListener: PermissionsListener = object : PermissionsListener {
         override fun onPermissionGranted(request_code: Int) {
             tvErrorMessage.visibility = View.GONE
-            pickImageFromGallery()
+//            pickImageFromGallery()
         }
 
         override fun onPermissionRejectedManyTimes(
@@ -190,13 +223,29 @@ class ViolaSampleActivity : AppCompatActivity() {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        permissionHelper.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    //----------------------------------------------------------------------------------------------
+
+    // get image from camera
+    val REQUEST_IMAGE_CAPTURE = 54321
+
+    private fun dispatchTakePictureIntent() {
+        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            Snackbar.make(root_view, "Please grant permission for the camera first and try again.", LENGTH_INDEFINITE).apply {
+                setAction("OK"){
+                    requestPermissions(
+                        arrayOf(Manifest.permission.CAMERA ),
+                        52431
+                    )
+                }
+                show()
+            }
+        } else {
+            val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            try {
+                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
+            } catch (e: ActivityNotFoundException) {
+                // display error state to the user
+            }
+        }
     }
 }
