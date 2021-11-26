@@ -1,15 +1,10 @@
 package com.darwin.sample.utils
 
 import android.app.Activity
-import android.app.ProgressDialog.show
-import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Bitmap.CompressFormat
-import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.net.Uri
-import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Pair
@@ -17,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity
 import com.darwin.sample.stickerscode.model.Sticker
 import com.darwin.sample.stickerscode.model.StickerPack
 import com.darwin.sample.utils.ImageHandlingHelper.format
-import com.darwin.sample.utils.ImageHandlingHelper.getResizedBitmap
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_viola_sample_edited.*
 import java.io.*
@@ -36,6 +30,41 @@ class StickerAndPackHandler {
         } catch (e: Exception) {
             Log.d("StickerAdder", "add failed: " + e.message)
         }
+    }
+
+    fun saveSingleSticker(ctxt: Context, bitmap: Bitmap, pack: StickerPack): File {
+        val bmp = getResizedBitmap(bitmap, 512, 512)
+        val dir = ctxt.getExternalFilesDir("custom_stickers" + File.separator + pack.identifier)
+
+        val n = File(dir,"stickers").listFiles()!!.size +1
+
+        val file = File(
+            ctxt.getExternalFilesDir("custom_stickers" + File.separator + pack.identifier + File.separator + "stickers"),
+            "f$n.webp"
+        )
+        val outputStream = FileOutputStream(file)
+
+        bmp.compress(format, 100, outputStream)
+
+        outputStream.flush()
+        outputStream.close()
+
+
+        MediaStore.Images.Media.insertImage(ctxt.contentResolver, file.absolutePath, file.name, file.name)
+        Log.d("StickerAdder", "check " + dir!!.absolutePath)
+
+        Snackbar.make(
+            (ctxt as Activity).root_view,
+            "File saved !",
+            Snackbar.LENGTH_INDEFINITE
+        ).apply{
+            setAction("CLOSE"){/*Define your callback here*/}
+            show()
+        }
+
+        latestPack = fetchStickerPack(dir).first
+
+        return file
     }
 
     fun saveBitmap(ctxt: Context, bitmap: Bitmap) : File{
@@ -196,14 +225,18 @@ class StickerAndPackHandler {
                 emoji = readData.second!!.first
                 //                stickers = Integer.parseInt(readData.second.second);
                 Log.d("StickerAdder", "add failed: in get:     -3/ yes")
-                val stickers: MutableList<Sticker?> =
-                    fetchStickers(0, emoji, File(folder, "stickers"))
-                stickers.add(stickers[0])
-                stickers.add(stickers[0])
+                val stickers: MutableList<Sticker?> = fetchStickers(0, emoji, File(folder, "stickers"))
+
+                latestPack = mPack
+
                 mPack?.stickers = stickers
                 mPack?.custom = true
                 Log.d("StickerAdder", "add failed: in get:     -3/ almost")
+
+                if (stickers.size<3)
+                    continue;
                 stickerPacks.add(mPack)
+
                 Log.d("StickerAdder", "add failed: in get:     -3/ done")
             }
         } catch (e: java.lang.Exception) {
@@ -213,7 +246,7 @@ class StickerAndPackHandler {
         return stickerPacks
     }
 
-    private fun fetchStickers(stickers: Int, emoji: String?, folder: File): MutableList<Sticker?> {
+    internal fun fetchStickers(stickers: Int, emoji: String?, folder: File): MutableList<Sticker?> {
 //        File f;
         val files = folder.listFiles()
         val tmp: ArrayList<Sticker?> = ArrayList()
@@ -237,7 +270,7 @@ class StickerAndPackHandler {
     }
 
     @Throws(IOException::class, ClassNotFoundException::class)
-    private fun fetchStickerPack(stickerPack: File): Pair<StickerPack?, Pair<String?, String?>?> {
+    fun fetchStickerPack(stickerPack: File): Pair<StickerPack?, Pair<String?, String?>?> {
         Log.d("StickerAdder", "add failed: in get:     -3/ started fetch")
         val f = File(stickerPack.toString() + File.separator + "pack_meta.txt")
         val input = BufferedReader(InputStreamReader(FileInputStream(f)))

@@ -21,6 +21,7 @@ import android.content.res.AssetManager;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.text.TextUtils;
 import android.util.Log;
@@ -42,6 +43,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class StickerContentProvider extends ContentProvider {
+    private static final String TAG = "AddStickerPackActivity***CONTPROV";
 
     /**
      * Do not change the strings listed below, as these are used by WhatsApp. And changing these will break the interface between sticker app and WhatsApp.
@@ -102,6 +104,7 @@ public class StickerContentProvider extends ContentProvider {
         //gets the list of stickers for a sticker pack, * respresent the identifier.
         MATCHER.addURI(authority, STICKERS + "/*", STICKERS_CODE);
 
+        Log.d(TAG, "onCreateabcdefg: "+getStickerPackList().size());
         for (StickerPack stickerPack : getStickerPackList()) {
             MATCHER.addURI(authority, STICKERS_ASSET + "/" + stickerPack.identifier + "/" + stickerPack.trayImageFile, STICKER_PACK_TRAY_ICON_CODE);
             for (Sticker sticker : stickerPack.getStickers()) {
@@ -112,41 +115,35 @@ public class StickerContentProvider extends ContentProvider {
         return true;
     }
 
-    public void addCustomStickers(StickerPack s){
-        final String authority = BuildConfig.CONTENT_PROVIDER_AUTHORITY;
-        if (!authority.startsWith(Objects.requireNonNull(getContext()).getPackageName())) {
-            throw new IllegalStateException("your authority (" + authority + ") for the content provider should start with your package name: " + getContext().getPackageName());
-        }
+    @Nullable
+    @Override
+    public Bundle call(@NonNull String method, @Nullable String arg, @Nullable Bundle extras) {
+        addCustomStickerToList(extras.getParcelable("stickerpack"));
+        return extras;
+//        return super.call(method, arg, extras);
+    }
 
-        MATCHER.addURI(
-                authority,
-                getContext().getExternalFilesDir(null).toString()
-                        + "/custom_stickers"
-                        + "/" + s.identifier
-                        + "/" + s.trayImageFile,
-                STICKER_PACK_TRAY_ICON_CODE);
+    @Nullable
+    @Override
+    public Bundle call(@NonNull String authority, @NonNull String method, @Nullable String arg, @Nullable Bundle extras) {
+        addCustomStickerToList(extras.getParcelable("stickerpack"));
+        return extras;
+//        return super.call(authority, method, arg, extras);
+    }
 
-        for (Sticker sticker : s.getStickers()) {
-            MATCHER.addURI(
-                    authority,
-                    getContext().getExternalFilesDir(null).toString()
-                            + "/custom_stickers"
-                            + "/" + s.identifier
-                            + "/stickers"
-                            + "/" + sticker.imageFileName,
-                    STICKERS_ASSET_CODE
-            );
-        }
-
+    public void addCustomStickerToList(StickerPack s){
+        stickerPackList.add(s);
     }
 
     @Override
     public Cursor query(@NonNull Uri uri, @Nullable String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
         final int code = MATCHER.match(uri);
+        Log.d(TAG, "query: code="+code+"; uri="+uri);
         if (code == METADATA_CODE) {
             return getPackForAllStickerPacks(uri);
         } else if (code == METADATA_CODE_FOR_SINGLE_PACK) {
+//            if (uri.toString().contains())
             return getCursorForSingleStickerPack(uri);
         } else if (code == STICKERS_CODE) {
             return getStickersForAStickerPack(uri);
@@ -158,7 +155,18 @@ public class StickerContentProvider extends ContentProvider {
     @Nullable
     @Override
     public AssetFileDescriptor openAssetFile(@NonNull Uri uri, @NonNull String mode) {
-        final int matchCode = MATCHER.match(uri);
+        int matchCode = MATCHER.match(uri);
+
+        String str = uri.toString();
+
+        if (str.contains("stickerPack"))
+            if (str.contains("tray"))
+                matchCode = STICKER_PACK_TRAY_ICON_CODE;
+            else
+                matchCode = STICKERS_ASSET_CODE;
+
+        Log.d(TAG, "openAssetFile: code="+matchCode+"; uri="+uri);
+
         if (matchCode == STICKERS_ASSET_CODE || matchCode == STICKER_PACK_TRAY_ICON_CODE) {
             return getImageAsset(uri);
         }
@@ -170,6 +178,7 @@ public class StickerContentProvider extends ContentProvider {
     @Override
     public String getType(@NonNull Uri uri) {
         final int matchCode = MATCHER.match(uri);
+        Log.d(TAG, "getType: code="+matchCode+"; uri="+uri);
         switch (matchCode) {
             case METADATA_CODE:
                 return "vnd.android.cursor.dir/vnd." + BuildConfig.CONTENT_PROVIDER_AUTHORITY + "." + METADATA;
@@ -208,7 +217,9 @@ public class StickerContentProvider extends ContentProvider {
 
     private Cursor getCursorForSingleStickerPack(@NonNull Uri uri) {
         final String identifier = uri.getLastPathSegment();
+        Log.d(TAG, "getCursorForSingleStickerPack: entered w id="+identifier+", and uri="+uri);
         for (StickerPack stickerPack : getStickerPackList()) {
+            Log.d(TAG, "getCursorForSingleStickerPack: ********** id="+stickerPack.identifier);
             if (identifier.equals(stickerPack.identifier)) {
                 return getStickerPackInfo(uri, Collections.singletonList(stickerPack));
             }

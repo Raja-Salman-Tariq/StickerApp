@@ -14,6 +14,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -33,6 +35,7 @@ import com.darwin.sample.stickerscode.recyclerview.StickerPackListAdapter;
 import com.darwin.sample.stickerscode.recyclerview.StickerPackListItemViewHolder;
 import com.darwin.sample.utils.ActivityResultHandler;
 import com.darwin.sample.utils.StickerAndPackHandler;
+import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.lang.ref.WeakReference;
@@ -56,7 +59,7 @@ public class StickerPackListActivity extends AddStickerPackActivity {
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
                 Log.d("testo01", ": " + result.getData().getData());
-                StickerPack newPack = new StickerAndPackHandler().getLatestPack();
+                StickerPack newPack = result.getData().getParcelableExtra("pack");
 //                if (newPack!=null)
 //                    stickerPackList.add(newPack);
 //                new StickerAndPackHandler().add(this, result.getData().getData(), this);
@@ -66,27 +69,36 @@ public class StickerPackListActivity extends AddStickerPackActivity {
                 for (StickerPack s : stickerPackList)
                     identifiers.add(s.identifier);
 
-                for (StickerPack s : new StickerAndPackHandler().get(this)) {
-                    if (!identifiers.contains(s)) {
-                        stickerPackList.add(s);
-//                        getContentResolver().call(
-//                                BuildConfig.CONTENT_PROVIDER_AUTHORITY,
-//                                "addCustomStickers",
-//                                null,
-//                                null
-//                        );
-                    }
-                }
+//                for (StickerPack s : new StickerAndPackHandler().get(this)) {
+//                    if (!identifiers.contains(s)) {
+//                        stickerPackList.add(s);
+//                    }
+//                }
+
+                if (newPack!=null)
+                    stickerPackList.add(newPack);
+
 //                getContentResolver().insert(StickerContentProvider.);
                 Snackbar snack = Snackbar.make(
                         getWindow().getDecorView().findViewById(android.R.id.content),
-                        "Pack added ! Please restart the app to add the pack to WhatsApp.",
-                        Snackbar.LENGTH_INDEFINITE
+                        "Remember to add more stickers to this pack !",
+                        Snackbar.LENGTH_LONG
                 );
                 snack.setAction("CLOSE", null);
                 snack.show();
             }
     );
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode==999 && resultCode==RESULT_OK){
+            StickerPack pack = data.getParcelableExtra("pack");
+            stickerPackList.remove(pack);
+//            Log.d("outerSticker", "removal of "+pack.identifier+" was "+stickerPackList.remove(pack));
+            stickerPackList.add(pack);
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,6 +117,9 @@ public class StickerPackListActivity extends AddStickerPackActivity {
         super.onResume();
         whiteListCheckAsyncTask = new WhiteListCheckAsyncTask(this);
         whiteListCheckAsyncTask.execute(stickerPackList.toArray(new StickerPack[0]));
+        for (StickerPack s : stickerPackList)
+            if (s.identifier.contains("ack"))
+                Log.d("outerSticker", "onResume: sz = "+s.getStickers().size());
     }
 
     @Override
@@ -125,7 +140,24 @@ public class StickerPackListActivity extends AddStickerPackActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.action_add){
-            mGetContent.launch(new Intent(this, ViolaSampleActivity.class));
+            StickerPackListActivity myThis = this;
+            Snackbar snack = Snackbar.make(
+                    getWindow().getDecorView().findViewById(android.R.id.content),
+                    "You're creating a custom sticker pack. Make sure to add at least 3 stickers " +
+                            "from the menu after selecting this sticker pack else the pack will be deleted.",
+                    BaseTransientBottomBar.LENGTH_INDEFINITE
+                    );
+            snack.setAction("OK", new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    mGetContent.launch(new Intent(myThis, ViolaSampleActivity.class));
+                }
+            });
+
+            TextView tv = (TextView) snack.getView().findViewById(com.google.android.material.R.id.snackbar_text);
+            tv.setMaxLines(5);
+
+            snack.show();
         }
         return super.onOptionsItemSelected(item);
     }

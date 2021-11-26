@@ -10,6 +10,7 @@ package com.darwin.sample.stickerscode.recyclerview;
 
 import android.content.Context;
 import android.net.Uri;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -84,11 +85,12 @@ public class StickerPreviewAdapter extends RecyclerView.Adapter<StickerPreviewVi
         stickerPreviewViewHolder.stickerPreviewView.setImageResource(errorResource);
         Uri imUri;
         if (stickerPack.custom)
-            imUri = Uri.fromFile(new File(ctxt.getExternalFilesDir(null),"custom_stickers"+File.separator+stickerPack.identifier+File.separator+"stickers"+File.separator+"f1.webp"));
+            imUri = Uri.fromFile(new File(ctxt.getExternalFilesDir(null),"custom_stickers"+File.separator+stickerPack.identifier+File.separator+"stickers"+File.separator+stickerPack.getStickers().get(i).imageFileName));
         else
             imUri = StickerPackLoader.getStickerAssetUri(stickerPack.identifier, stickerPack.getStickers().get(i).imageFileName);
         stickerPreviewViewHolder.stickerPreviewView.setImageURI(imUri);
         stickerPreviewViewHolder.stickerPreviewView.setOnClickListener(v -> expandPreview(i, stickerPreviewViewHolder.stickerPreviewView));
+//        Log.d("innerSticker", "onBindViewHolder: "+);
     }
 
     @Override
@@ -184,7 +186,7 @@ public class StickerPreviewAdapter extends RecyclerView.Adapter<StickerPreviewVi
 
             Uri stickerAssetUri;
             if (stickerPack.custom)
-                stickerAssetUri = Uri.fromFile(new File(clickedStickerPreview.getContext().getExternalFilesDir(null),"custom_stickers"+File.separator+stickerPack.identifier+File.separator+"stickers"+File.separator+"f1.webp"));
+                stickerAssetUri = Uri.fromFile(new File(clickedStickerPreview.getContext().getExternalFilesDir(null),"custom_stickers"+File.separator+stickerPack.identifier+File.separator+"stickers"+File.separator+ stickerPack.getStickers().get(position).imageFileName));
             else
                 stickerAssetUri = StickerPackLoader.getStickerAssetUri(stickerPack.identifier, stickerPack.getStickers().get(position).imageFileName);
             DraweeController controller = Fresco.newDraweeControllerBuilder()

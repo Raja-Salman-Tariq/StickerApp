@@ -10,10 +10,13 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
+import com.darwin.sample.stickerscode.model.Sticker
+import com.darwin.sample.stickerscode.model.StickerPack
 import com.darwin.sample.utils.PermissionHelper.PermissionsListener
 import com.darwin.sample.utils.ActivityResultHandler
 import com.darwin.sample.utils.ImageHandlingHelper
@@ -32,6 +35,7 @@ import kotlinx.android.synthetic.main.activity_face_crop_sample.btCrop
 import kotlinx.android.synthetic.main.activity_face_crop_sample.iv_input_image
 import kotlinx.android.synthetic.main.activity_face_crop_sample.tvErrorMessage
 import kotlinx.android.synthetic.main.activity_viola_sample_edited.*
+import java.util.ArrayList
 
 
 /**
@@ -50,6 +54,8 @@ class ViolaSampleActivity : AppCompatActivity() {
 
     internal val imagePickerIntentId = 1
 
+    var stickerPack : StickerPack? = null
+
 //    =============================================================================================
 //    -----------------------             ACTIVITY OVERRIDES              -------------------------
 //    =============================================================================================
@@ -58,6 +64,10 @@ class ViolaSampleActivity : AppCompatActivity() {
         setContentView(R.layout.activity_viola_sample_edited)
 
         permissionHelper = PermissionHelper(this)
+
+        stickerPack = intent.getParcelableExtra("stickerpack")
+
+        Log.d("individSticker", "onCreate: recvd individ sticker = $stickerPack")
 
         requestStoragePermission()
         setEventListeners()
@@ -114,7 +124,9 @@ class ViolaSampleActivity : AppCompatActivity() {
             CutOut.activity().src(pickedImage).start(this);
         }
         btSave.setOnClickListener{
-            val image = StickerAndPackHandler().saveBitmap(this, bitmap)
+            val image = if (stickerPack != null) {
+                StickerAndPackHandler().saveSingleSticker(this, bitmap, stickerPack!!)
+            } else StickerAndPackHandler().saveBitmap(this, bitmap)
 
             val imageUri: Uri = FileProvider.getUriForFile(
                 this,
@@ -128,7 +140,30 @@ class ViolaSampleActivity : AppCompatActivity() {
                 type = "image/webp"
             }
             startActivity(Intent.createChooser(shareIntent, resources.getText(R.string.send_to)))
-            val intent = Intent().apply { data = imageUri }
+            val intent = Intent().apply {
+                data = imageUri
+                if (stickerPack!=null) {
+                    putStringArrayListExtra("emojis",
+                        stickerPack!!.stickers[0].emojis as ArrayList<String>?
+                    )
+                    putExtra("name", image.name)
+                    putExtra("size", image.length())
+                    putExtra("uri", Uri.fromFile(image).toString())
+                    putExtra("path", image.absolutePath)
+                    Log.d("individSticker", "fetchStickers: size=" + image.length())
+                }
+            }
+            val readData = StickerAndPackHandler().fetchStickerPack(image.parentFile.parentFile)
+            Log.d("StickerAdder", "add failed: in get:     -3/ while fetching")
+            val mPack = readData.first
+            val emoji = readData.second!!.first
+            //                stickers = Integer.parseInt(readData.second.second);
+            Log.d("StickerAdder", "add failed: in get:     -3/ yes")
+            val stickers: MutableList<Sticker?> = StickerAndPackHandler().fetchStickers(0, emoji, image.parentFile)
+
+            mPack?.stickers = stickers
+            mPack?.custom = true
+            intent.putExtra("pack", mPack)
             setResult(RESULT_OK, intent)
             finish()
         }

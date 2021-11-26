@@ -74,7 +74,8 @@ public class StickerPackListAdapter extends RecyclerView.Adapter<StickerPackList
             Intent intent = new Intent(view.getContext(), StickerPackDetailsActivity.class);
             intent.putExtra(StickerPackDetailsActivity.EXTRA_SHOW_UP_BUTTON, true);
             intent.putExtra(StickerPackDetailsActivity.EXTRA_STICKER_PACK_DATA, pack);
-            view.getContext().startActivity(intent);
+//            view.getContext().startActivity(intent);
+            activity.startActivityForResult(intent, 999);
         });
         viewHolder.imageRowView.removeAllViews();
 

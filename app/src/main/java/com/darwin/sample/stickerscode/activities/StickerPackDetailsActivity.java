@@ -13,6 +13,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.format.Formatter;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -28,20 +29,58 @@ import androidx.recyclerview.widget.RecyclerView;
 
 
 import com.darwin.sample.R;
+import com.darwin.sample.ViolaSampleActivity;
 import com.darwin.sample.stickerscode.WhitelistCheck;
+import com.darwin.sample.stickerscode.model.Sticker;
+import com.darwin.sample.stickerscode.model.StickerContentProvider;
 import com.darwin.sample.stickerscode.model.StickerPack;
 import com.darwin.sample.stickerscode.recyclerview.StickerPreviewAdapter;
 import com.darwin.sample.stickerscode.utils.StickerPackLoader;
 import com.darwin.sample.utils.StickerAndPackHandler;
 import com.facebook.drawee.view.SimpleDraweeView;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 
 public class StickerPackDetailsActivity extends AddStickerPackActivity {
 
-//    ActivityResultLauncher<String> mGetContent = registerForActivityResult(new ActivityResultContracts.GetContent(),
-//            uri -> new StickerAndPackHandler().add(this, uri, this));
+    private StickerPack stickerPack;
+    private StickerPreviewAdapter stickerPreviewAdapter;
+
+    ActivityResultLauncher<Intent> addSticker = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                Log.d("individSticker", ": " + result.getData().getData());
+
+                Intent data = result.getData();
+
+                if (result.getData().getStringExtra("name")==null)
+                    Log.d("individSticker", " --- ERROR --- extras not received ");
+                else {
+                    Log.d("individSticker", " --- SUCCESS --- extras not received ");
+                    Sticker s = new Sticker(data.getStringExtra("name"), data.getStringArrayListExtra("emojis"));
+                    s.setSize(data.getLongExtra("size",1));
+                    s.uri = Uri.parse(data.getStringExtra("uri"));
+                    s.path = data.getStringExtra("path");
+                    stickerPack.addSticker(s);
+//                    stickerPreviewAdapter.notifyItemInserted(stickerPack.getStickers().size());
+                    stickerPreviewAdapter.notifyDataSetChanged();
+                    Log.d("individSticker", " total size ="+stickerPack.getStickers().size()+"; this stkr="+s.imageFileName);
+                    if (stickerPack.getStickers().size()>=3){
+                        Bundle b = new Bundle();
+                        b.putParcelable("stickerpack", stickerPack);
+                        getContentResolver().call(
+                                StickerContentProvider.AUTHORITY_URI,
+                                "addCustomStickerToList",
+                                "",
+                                b
+                        );
+                    }
+                }
+            }
+    );
 
     /**
      * Do not change below values of below 3 lines as this is also used by WhatsApp
@@ -61,14 +100,43 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
 
     private RecyclerView recyclerView;
     private GridLayoutManager layoutManager;
-    private StickerPreviewAdapter stickerPreviewAdapter;
     private int numColumns;
     private View addButton;
     private View alreadyAddedText;
-    private StickerPack stickerPack;
     private View divider;
     private WhiteListCheckAsyncTask whiteListCheckAsyncTask;
 
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        Log.d("outerSticker", "onSupportNavigateUp: ");
+        Log.d("outerSticker", "onNavUp: ");
+        Intent i = new Intent();
+        i.putExtra("pack", stickerPack);
+        setResult(RESULT_OK, i);
+        finishActivity(999);
+        return super.onSupportNavigateUp();
+    }
+
+    @Override
+    public boolean onNavigateUp() {
+        Log.d("outerSticker", "onNavUp: ");
+        Intent i = new Intent();
+        i.putExtra("pack", stickerPack);
+        setResult(RESULT_OK, i);
+        finishActivity(999);
+        return super.onNavigateUp();
+    }
+
+    @Override
+    public void onBackPressed() {
+        Log.d("outerSticker", "onNavUp: ");
+        Intent i = new Intent();
+        i.putExtra("pack", stickerPack);
+        setResult(RESULT_OK, i);
+        finishActivity(999);
+        super.onBackPressed();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,7 +193,7 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.toolbar, menu);
-        menu.findItem(R.id.action_add).setVisible(false);
+        menu.findItem(R.id.action_add).setVisible(true);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -136,9 +204,11 @@ public class StickerPackDetailsActivity extends AddStickerPackActivity {
             launchInfoActivity(stickerPack.publisherWebsite, stickerPack.publisherEmail, stickerPack.privacyPolicyWebsite, stickerPack.licenseAgreementWebsite, trayIconUri.toString());
             return true;
         }
-//        if (item.getItemId() == R.id.action_add){
-//            mGetContent.launch("image/*");
-//        }
+        if (item.getItemId() == R.id.action_add){
+            Intent i = new Intent(this, ViolaSampleActivity.class);
+            i.putExtra("stickerpack", stickerPack);
+            addSticker.launch(i);
+        }
         return super.onOptionsItemSelected(item);
     }
 
